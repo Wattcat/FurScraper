@@ -1,4 +1,4 @@
-# FurScraper
+# FurScraper - Username webscraper test
 This is a proof of concept username webscraper for Furaffinity
 
 When run, supply a username and output path of a non private furaffinity user account.
