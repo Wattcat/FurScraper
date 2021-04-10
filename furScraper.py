@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 import requests
 import os
 
-
+# Checks if supplied username is valid. Otherwise returns false
 def isValid(username):
     isValidUser = True
     privateexeption = ["The owner of this page has elected to make it available to registered users only.",
@@ -30,9 +30,6 @@ def pageScraper(select, username):
         currentpage = requests.get(url)
         soup = BeautifulSoup(currentpage.content,
                              'html.parser')  # sorts with bs4
-        # Check if profile is private
-        private = soup.find_all('p', {"class": "link-override"})
-        # This is to check if a profile is private
         betterdivs = soup.find_all('a', href=True)
         print("scraping users at page:", url)
         try:  # this is to catch out of range errors
@@ -52,9 +49,8 @@ def pageScraper(select, username):
                 break
             pos += 1
 
-
+# This is used by UI for user selection
 def selector():
-    # Why not use refer to them as followers?
     selection = input(
         "Select mode:\n1. Get what user is Watching \n2. Get Watchers/followers \n3. Get both \n")
     selection = selection.strip()
@@ -68,7 +64,7 @@ def selector():
         print("Please enter a valid number")
         selection()
 
-
+# used for writing everything to a file
 def writer(path, lists):
     with open(path, 'a') as a_writer:
         for s in lists:
@@ -76,7 +72,7 @@ def writer(path, lists):
         a_writer.close
         return "Done"
 
-
+# simple user interface in terminal
 def UI():
     username = input("Enter a non private Username:\n")
     if isValid(username) == True:
