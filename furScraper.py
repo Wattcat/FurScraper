@@ -6,24 +6,35 @@ import requests
 import os
 
 
-def furScraper(select, username):
-    privateexeption = "The owner of this page has elected to make it available to registered users only."
+def isValid(username):
+    isValidUser = True
+    privateexeption = ["The owner of this page has elected to make it available to registered users only.",
+                       "Provided username not found in the database."]
+    url = "https://www.furaffinity.net/watchlist/to/{}/".format(username)
+    currentpage = requests.get(url)
+    soup = BeautifulSoup(currentpage.content, 'html.parser')  # sorts with bs4
+    private = soup.find_all('div', {"class": "section-body alignleft"})
+    # This is to check if a profile is private or non existent
+    if privateexeption[0] in str(private) or privateexeption[1] in str(private):
+        isValidUser = False
+    return isValidUser
+
+
+# Returns a list of unique user accounts
+def pageScraper(select, username):
     users = []
     pos = 0
     while True:
         url = 'https://www.furaffinity.net/watchlist/{}/{}/{}/?'.format(
             select, username, pos)
-        currentpage = requests.get(url)  # för hämtning av url
+        currentpage = requests.get(url)
         soup = BeautifulSoup(currentpage.content,
                              'html.parser')  # sorts with bs4
         # Check if profile is private
         private = soup.find_all('p', {"class": "link-override"})
         # This is to check if a profile is private
-        if privateexeption in str(private):
-            print("This profile is set to private for non logged in users.")
-            break
         betterdivs = soup.find_all('a', href=True)
-        print("Found users in:", url)
+        print("scraping users at page:", url)
         try:  # this is to catch out of range errors
             contentlist = str(betterdivs).split("</a>")
             for i in range(len(contentlist)):
@@ -35,14 +46,14 @@ def furScraper(select, username):
             # print(e)
             pass
 
-        if (len(str(soup)) < 4500):
-            print("End of the line!")
-            return users
-            break
-        pos += 1
+            if (len(str(soup)) < 4500):
+                print("End of the line!")
+                return users
+                break
+            pos += 1
 
 
-def selection():
+def selector():
     # Why not use refer to them as followers?
     selection = input(
         "Select mode:\n1. Get what user is Watching \n2. Get Watchers/followers \n3. Get both \n")
@@ -58,27 +69,30 @@ def selection():
         selection()
 
 
-def listwriter():
-    username = input("Enter a non private Username:\n")
-    mypath = os.path.join(os.getcwd(), input("Please enter output file name:\n(Note: Will output in current working folder) \n"))
-    select = selection()
-    # Both selection
-    if select == "both":
-        followers = furScraper("to", username)
-        if followers == None:
-            return listwriter()
-        following = furScraper("by", username)
-        users = (followers + ["\nAll {} is watching".format(username)] + following)
-    else:
-        users = furScraper(select, username)
-        if users == None:
-            return listwriter()
-
-    with open(mypath, 'a') as a_writer:
-        for s in users:
+def writer(path, lists):
+    with open(path, 'a') as a_writer:
+        for s in lists:
             a_writer.write(str(s) + "\n")
         a_writer.close
         return "Done"
 
 
-print(listwriter())
+def UI():
+    username = input("Enter a non private Username:\n")
+    if isValid(username) == True:
+        mypath = os.path.join(os.getcwd(), input(
+            "Please enter output file name:\n(Note: Will output in current working folder) \n"))
+        selected = selector()
+        if selected == "both":
+            followers = pageScraper("to", username)
+            following = pageScraper("by", username)
+            users = (
+                followers + ["\nAll {} is watching".format(username)] + following)
+        else:
+            users = pageScraper(selected, username)
+        writer(mypath, users)
+    else:
+        print("Error username is not valid")
+        return UI()
+
+UI()
